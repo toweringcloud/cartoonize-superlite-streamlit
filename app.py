@@ -23,6 +23,12 @@ with st.sidebar:
         ("ghibli", "van gogh", "cyber"),
     )
 
+    # Link to Github Repo
+    # st.markdown("---")
+    # github_link = "https://github.com/toweringcloud/cartoonize-gpt/blob/main/app.py"
+    # badge_link = "https://badgen.net/badge/icon/GitHub?icon=github&label"
+    # st.write(f"[![Repo]({badge_link})]({github_link})")
+
 
 if not API_KEY:
     st.error("Please input your API Key on the sidebar")
