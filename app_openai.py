@@ -18,15 +18,6 @@ with st.sidebar:
     IS_TEST = True
     config = dotenv_values(".env")
 
-    # LLM API Credential
-    OPENAI_API_KEY = (
-        st.text_input("Input your OpenAI API Key", type="password")
-        if IS_TEST == True
-        else config["OPENAI_API_KEY"]
-    )
-    OPENAI_GPT_MODEL = "gpt-4o-mini" if IS_TEST == True else config["OPENAI_GPT_MODEL"]
-    OPENAI_LANGUAGE = "Korean" if IS_TEST == True else config["OPENAI_LANGUAGE"]
-
     # Storage API Credential
     CLOUDFLARE_ACCOUNT_ID = (
         st.text_input("Input your Cloudflare Account ID", type="password")
@@ -38,6 +29,15 @@ with st.sidebar:
         if IS_TEST == True
         else config["CLOUDFLARE_API_TOKEN"]
     )
+
+    # LLM API Credential
+    OPENAI_API_KEY = (
+        st.text_input("Input your OpenAI API Key", type="password")
+        if IS_TEST == True
+        else config["OPENAI_API_KEY"]
+    )
+    OPENAI_GPT_MODEL = "gpt-4o-mini" if IS_TEST == True else config["OPENAI_GPT_MODEL"]
+    OPENAI_LANGUAGE = "Korean" if IS_TEST == True else config["OPENAI_LANGUAGE"]
 
     # Cartoon Style
     selected_style = st.selectbox(
@@ -82,10 +82,12 @@ def upload_image_to_cloudflare(image_file):
         return None
 
 
-if not OPENAI_API_KEY:
-    st.error("Please input your OpenAI API Key on the sidebar")
+if not CLOUDFLARE_ACCOUNT_ID:
+    st.error("Please input your Cloudflare Account ID on the sidebar")
 elif not CLOUDFLARE_API_TOKEN:
     st.error("Please input your Cloudflare API Token on the sidebar")
+elif not OPENAI_API_KEY:
+    st.error("Please input your OpenAI API Key on the sidebar")
 else:
     # Define OpenAI API Client
     client = openai.OpenAI(api_key=OPENAI_API_KEY)

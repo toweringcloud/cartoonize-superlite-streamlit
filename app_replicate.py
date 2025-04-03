@@ -56,7 +56,9 @@ with st.sidebar:
 
 
 if not REPLICATE_API_TOKEN:
-    st.error("Please input your API Key on the sidebar")
+    st.error("Please input your Replicate API Token on the sidebar")
+elif not OPENAI_API_KEY:
+    st.error("Please input your OpenAI API Key on the sidebar")
 else:
     # Define Replicate API Client
     replicate.client = replicate.Client(api_token=REPLICATE_API_TOKEN)
