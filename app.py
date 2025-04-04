@@ -52,27 +52,32 @@ else:
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     # Accept User's Prompt
-    user_prompt = st.text_input
+    user_prompt = st.text_input("Enter your prompt (at least 10 characters):")
 
-    if user_prompt is not None and len(user_prompt) >= 10:
-        # Action to Cartoonize
-        if st.button("Cartoonize your photo."):
-            # Transform Uploaded Image using OpenAI DALL·E API
-            cartoon_url = None
-            with st.spinner("Transforming..."):
-                art_style = selected_style.split(" | ")[1]
-                response = client.images.generate(
-                    model="dall-e-3",
-                    prompt=f"{user_prompt}, high quality, {art_style} cartoon style",
-                    size="1024x1024",
-                    n=1,
-                )
-                cartoon_url = response.data[0].url
+    if user_prompt:
+        if len(user_prompt) >= 10:
+            # Action to Cartoonize
+            if st.button("Cartoonize your prompt."):
+                # Transform Uploaded Image using OpenAI DALL·E API
+                cartoon_url = None
+                with st.spinner("Transforming..."):
+                    art_style = selected_style.split(" | ")[1]
+                    response = client.images.generate(
+                        model="dall-e-3",
+                        prompt=f"{user_prompt}, high quality, {art_style} cartoon style",
+                        size="1024x1024",
+                        n=1,
+                    )
+                    cartoon_url = response.data[0].url
 
-            if cartoon_url:
-                st.success("✅ Transformed!")
+                if cartoon_url:
+                    st.success("✅ Transformed!")
 
-                # Show Transformed Image
-                st.image(
-                    cartoon_url, caption="Cartoonized Image", use_container_width=True
-                )
+                    # Show Transformed Image
+                    st.image(
+                        cartoon_url,
+                        caption="Cartoonized Image",
+                        use_container_width=True,
+                    )
+        else:
+            st.error("⚠️ Please enter at least 10 characters.")
