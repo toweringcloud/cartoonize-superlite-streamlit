@@ -1,10 +1,12 @@
+from diffusers import StableDiffusionControlNetPipeline, ControlNetModel
 from dotenv import dotenv_values
+from io import BytesIO
 from PIL import Image
-import base64
-import io
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 import openai
-import replicate
+import requests
 import streamlit as st
+import torch
 
 
 # Streamlit App UI
@@ -19,13 +21,19 @@ with st.sidebar:
     IS_TEST = True
     config = dotenv_values(".env")
 
-    # LLM API Credential
-    REPLICATE_API_TOKEN = (
-        st.text_input("Input your Replicate API Key", type="password")
+    # Storage API Credential
+    CLOUDFLARE_ACCOUNT_ID = (
+        st.text_input("Input your Cloudflare Account ID", type="password")
         if IS_TEST == True
-        else config["REPLICATE_API_TOKEN"]
+        else config["CLOUDFLARE_ACCOUNT_ID"]
+    )
+    CLOUDFLARE_API_TOKEN = (
+        st.text_input("Input your Cloudflare API Token", type="password")
+        if IS_TEST == True
+        else config["CLOUDFLARE_API_TOKEN"]
     )
 
+    # LLM API Credential
     OPENAI_API_KEY = (
         st.text_input("Input your OpenAI API Key", type="password")
         if IS_TEST == True
@@ -49,20 +57,49 @@ with st.sidebar:
     # Link to Github Repo
     st.markdown("---")
     github_link = (
-        "https://github.com/toweringcloud/cartoonize-gpt/blob/main/app_replicate.py"
+        "https://github.com/toweringcloud/cartoonize-gpt/blob/main/app_openapi.py"
     )
     badge_link = "https://badgen.net/badge/icon/GitHub?icon=github&label"
     st.write(f"[![Repo]({badge_link})]({github_link})")
 
 
-if not REPLICATE_API_TOKEN:
-    st.error("Please input your Replicate API Token on the sidebar")
+def upload_image_to_cloudflare(image_file):
+    CLOUDFLARE_VERIFY_URL = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/tokens/verify"
+    response = requests.get(
+        CLOUDFLARE_VERIFY_URL,
+        headers={"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}"},
+    )
+    print(f"[verify] {response} | {response.text}")
+
+    if response.status_code != 200:
+        st.error(f"Failed to verify: {response.text}")
+        return None
+
+    CLOUDFLARE_UPLOAD_URL = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/images/v1"
+    encoder = MultipartEncoder(
+        fields={"file": (image_file.name, image_file, "image/jpeg")}
+    )
+    headers = {
+        "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+        "Content-Type": encoder.content_type,
+    }
+    response = requests.post(CLOUDFLARE_UPLOAD_URL, headers=headers, data=encoder)
+    print(f"[upload] {response} | {response.text}")
+
+    if response.status_code == 200:
+        return response.json()["result"]["variants"][0]
+    else:
+        st.error(f"Failed to upload: {response.text}")
+        return None
+
+
+if not CLOUDFLARE_ACCOUNT_ID:
+    st.error("Please input your Cloudflare Account ID on the sidebar")
+elif not CLOUDFLARE_API_TOKEN:
+    st.error("Please input your Cloudflare API Token on the sidebar")
 elif not OPENAI_API_KEY:
     st.error("Please input your OpenAI API Key on the sidebar")
 else:
-    # Define Replicate API Client
-    replicate.client = replicate.Client(api_token=REPLICATE_API_TOKEN)
-
     # Define OpenAI API Client
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
@@ -85,34 +122,40 @@ else:
             elif rotation == "Right 90°":
                 image = image.rotate(-90, expand=True)
 
-            # Show Original Image
+            #  Show Original Image
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
             if st.button("Cartoonize your photo."):
-                # Encode Image as Base64
-                img_b64 = None
-                with st.spinner("Encoding..."):
-                    img_io = io.BytesIO()
-                    image.save(img_io, format="PNG")
-                    img_bytes = img_io.getvalue()
-                    img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+                # Upload Image on Cloudflare Storage
+                image_url = None
+                with st.spinner("Uploading..."):
+                    image_url = upload_image_to_cloudflare(uploaded_file)
 
-                if img_b64:
-                    # Transform Uploaded Image using Replicate API (Stable Diffusion img2img)
+                if image_url:
+                    # Transform Uploaded Image using OpenAI DALL·E API
                     cartoon_url = None
                     with st.spinner("Transforming..."):
-                        art_style = selected_style.split(" | ")[1]
-                        output = replicate.run(
-                            "stability-ai/stable-diffusion-img2img",
-                            input={
-                                "image": f"data:image/png;base64,{img_b64}",
-                                "prompt": f"A cartoon version of this image, high quality, digital art, {art_style} style",
-                                "strength": 0.75,
-                                "guidance_scale": 7.5,
-                            },
+                        # Load ControlNet Model
+                        controlnet = ControlNetModel.from_pretrained(
+                            "lllyasviel/control_v11f1e_sd15_tile"
                         )
-                        cartoon_url = output[0]
+
+                        # Setup Stable Diffusion Pipeline
+                        pipe = StableDiffusionControlNetPipeline.from_pretrained(
+                            "runwayml/stable-diffusion-v1-5",
+                            controlnet=controlnet,
+                            torch_dtype=torch.float16,
+                        ).to("cuda")
+
+                        # Download & Convert Image
+                        response = requests.get(image_url)
+                        image = Image.open(BytesIO(response.content))
+
+                        # Run Transformation with Prompt
+                        art_style = selected_style.split(" | ")[1]
+                        prompt = (f"high quality, {art_style} cartoon style",)
+                        cartoon_url = pipe(prompt=prompt, image=image).images[0]
 
                     if cartoon_url:
                         st.success("✅ Transformed!")
