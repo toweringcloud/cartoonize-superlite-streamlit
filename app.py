@@ -10,11 +10,33 @@ st.set_page_config(
 )
 st.title("Cartoonize your Prompt")
 
+# Load Configuration
+IS_TEST = True
+config = dotenv_values(".env")
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+
+def login():
+    username = st.session_state.get("username")
+    password = st.session_state.get("password")
+
+    if username == config["CUSTOM_LOGIN_ID"] and password == config["CUSTOM_LOGIN_PW"]:
+        st.session_state.logged_in = True
+        st.success("✅ Welcome to Cartoonize GPT!")
+    else:
+        st.warning("Check your Account!")
+
+
+# Show Login Form
+if not st.session_state.logged_in:
+    with st.container():
+        if st.button("로그인"):
+            login()
+    st.stop()
 
 with st.sidebar:
-    IS_TEST = True
-    config = dotenv_values(".env")
-
     # LLM API Credential
     OPENAI_API_KEY = (
         st.text_input("Input your OpenAI API Key", type="password")
@@ -28,9 +50,11 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
+            "케이팝 | k-pop",
+            "뽀로로 | ppororo",
             "지브리 | ghibli",
             "디즈니 | disney",
-            "뽀로로 | ppororo",
+            "피카소 | picaso",
             "판타지 | fantastic",
             "사이버 | cybertic",
         ),
@@ -38,9 +62,7 @@ with st.sidebar:
 
     # Link to Github Repo
     st.markdown("---")
-    github_link = (
-        "https://github.com/toweringcloud/cartoonize-gpt/blob/main/app_openapi.py"
-    )
+    github_link = "https://github.com/toweringcloud/cartoonize-gpt/blob/main/app.py"
     badge_link = "https://badgen.net/badge/icon/GitHub?icon=github&label"
     st.write(f"[![Repo]({badge_link})]({github_link})")
 

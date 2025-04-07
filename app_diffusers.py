@@ -13,11 +13,11 @@ st.set_page_config(
 )
 st.title("Cartoonize your Photo")
 
+# Load Configuration
+IS_TEST = True
+config = dotenv_values(".env")
 
 with st.sidebar:
-    IS_TEST = True
-    config = dotenv_values(".env")
-
     # LLM API Credential
     OPENAI_API_KEY = (
         st.text_input("Input your OpenAI API Key", type="password")
@@ -31,9 +31,11 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
+            "케이팝 | k-pop",
+            "뽀로로 | ppororo",
             "지브리 | ghibli",
             "디즈니 | disney",
-            "뽀로로 | ppororo",
+            "피카소 | picaso",
             "판타지 | fantastic",
             "사이버 | cybertic",
         ),
@@ -104,7 +106,7 @@ else:
                     # Show Transformed Image
                     st.image(
                         cartoon_url,
-                        caption="Cartoonized Image",
+                        caption=f"{art_style} style of cartoon",
                         use_container_width=True,
                     )
 
