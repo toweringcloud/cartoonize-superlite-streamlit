@@ -18,7 +18,7 @@ IS_TEST = True
 config = dotenv_values(".env")
 
 with st.sidebar:
-    # LLM API Credential
+    # API Credential
     OPENAI_API_KEY = (
         st.text_input("Input your OpenAI API Key", type="password")
         if IS_TEST == True

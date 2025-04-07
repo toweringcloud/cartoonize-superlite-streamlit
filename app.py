@@ -32,12 +32,16 @@ def login():
 # Show Login Form
 if not st.session_state.logged_in:
     with st.container():
-        if st.button("로그인"):
+        username = st.text_input("ID", key="username")
+        password = st.text_input("PW", type="password", key="password")
+
+        if st.button("LOGIN"):
             login()
     st.stop()
 
+
 with st.sidebar:
-    # LLM API Credential
+    # API Credential
     OPENAI_API_KEY = (
         st.text_input("Input your OpenAI API Key", type="password")
         if IS_TEST == True
@@ -83,10 +87,10 @@ else:
                 # Transform Uploaded Image using OpenAI DALL·E API
                 cartoon_url = None
                 with st.spinner("Transforming..."):
-                    art_style = selected_style.split(" | ")[1]
+                    art_style = selected_style.split(" | ")
                     response = client.images.generate(
                         model="dall-e-3",
-                        prompt=f"{user_prompt}, high quality, {art_style} cartoon style",
+                        prompt=f"{user_prompt}, high quality, {art_style[1]} cartoon style",
                         size="1024x1024",
                         n=1,
                     )
@@ -98,7 +102,7 @@ else:
                     # Show Transformed Image
                     st.image(
                         cartoon_url,
-                        caption="Cartoonized Image",
+                        caption=f"[{art_style[0]}] {user_prompt}",
                         use_container_width=True,
                     )
         else:

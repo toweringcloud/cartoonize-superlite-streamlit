@@ -16,8 +16,22 @@ st.title("Cartoonize your Photo")
 IS_TEST = True
 config = dotenv_values(".env")
 
+
+# Handle OAuth Login
+st.login()
+user = st.experimental_user
+
+if user.is_logged_in:
+    st.success(f"✅ Welcome to Cartoonize GPT, {user.name}님!")
+    st.write("- User Info:")
+    st.json(user.to_dict())
+else:
+    st.warning("Check your Account!")
+    st.stop()
+
+
 with st.sidebar:
-    # Storage API Credential
+    # API Credential
     CLOUDFLARE_ACCOUNT_ID = (
         st.text_input("Input your Cloudflare Account ID", type="password")
         if IS_TEST == True
@@ -109,24 +123,27 @@ else:
                 if image_url:
                     st.success("✅ Uploaded!")
 
-                    # Transform Uploaded Image using OpenAI DALL·E API
-                    st.write("Transforming...")
+                    # Transform Uploaded Image using Cloudflare Workers
                     art_style = selected_style.split(" | ")[1]
-                    response = client.images.generate(
-                        model="dall-e-3",
-                        image=image_url,
-                        prompt=f"A cartoon version of this image, high quality, digital art, {art_style} style",
-                        n=1,
-                        size="1024x1024",
-                    )
-                    cartoon_url = response["data"][0]["url"]
+                    files = {"file": uploaded_file.getvalue(), "style": art_style}
 
-                    if cartoon_url:
-                        st.success("✅ Transformed!")
-
-                        # Show Transformed Image
-                        st.image(
-                            cartoon_url,
-                            caption="Cartoonized Image",
-                            use_container_width=True,
+                    with st.spinner("Transforming..."):
+                        response = requests.post(
+                            "https://cartoonize.toweringcloud.workers.dev", files=files
                         )
+
+                    if response.status_code == 200:
+                        result = response.json()
+                        cartoon_url = result.get("result", {}).get("variants", [])[0]
+
+                        if cartoon_url:
+                            st.success("✅ Transformed!")
+
+                            # Show Transformed Image
+                            st.image(
+                                cartoon_url,
+                                caption=f"{art_style} style of cartoon",
+                                use_container_width=True,
+                            )
+                        else:
+                            st.error("Failed to transform...😢")

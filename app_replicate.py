@@ -18,7 +18,7 @@ IS_TEST = True
 config = dotenv_values(".env")
 
 with st.sidebar:
-    # Generative AI API Credential
+    # API Credential
     REPLICATE_API_TOKEN = (
         st.text_input("Input your Replicate API Key", type="password")
         if IS_TEST == True
