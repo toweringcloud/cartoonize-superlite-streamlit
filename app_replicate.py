@@ -13,18 +13,16 @@ st.set_page_config(
 )
 st.title("Cartoonize your Photo")
 
+
 # Load Configuration
-IS_TEST = True
-config = dotenv_values(".env")
+if "REPLICATE_API_TOKEN" in st.secrets:
+    API_KEY = st.secrets["REPLICATE_API_TOKEN"]
+else:
+    config = dotenv_values(".env")
+    API_KEY = config["REPLICATE_API_TOKEN"]
+
 
 with st.sidebar:
-    # API Credential
-    REPLICATE_API_TOKEN = (
-        st.text_input("Input your Replicate API Key", type="password")
-        if IS_TEST == True
-        else config["REPLICATE_API_TOKEN"]
-    )
-
     # Cartoon Style
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
@@ -32,10 +30,10 @@ with st.sidebar:
             "케이팝 | k-pop",
             "뽀로로 | ppororo",
             "지브리 | ghibli",
+            "짱구   | crayon shinchan",
             "디즈니 | disney",
+            "고흐   | van gogh",
             "피카소 | picaso",
-            "판타지 | fantastic",
-            "사이버 | cybertic",
         ),
     )
 
@@ -48,11 +46,11 @@ with st.sidebar:
     st.write(f"[![Repo]({badge_link})]({github_link})")
 
 
-if not REPLICATE_API_TOKEN:
-    st.error("Please input your Replicate API Token on the sidebar")
+if not API_KEY:
+    st.error("Please input your Replicate API Token on runtime configuration")
 else:
     # Define Replicate API Client
-    replicate.client = replicate.Client(api_token=REPLICATE_API_TOKEN)
+    replicate.client = replicate.Client(api_token=API_KEY)
 
     uploaded_file = st.file_uploader("Upload your photo.", type=["jpg", "png", "jpeg"])
 
@@ -77,7 +75,7 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-            if st.button("Cartoonize your photo."):
+            if st.button("🐱‍🐉 Cartoonize"):
                 # Encode Image as Base64
                 img_b64 = None
                 with st.spinner("Encoding..."):

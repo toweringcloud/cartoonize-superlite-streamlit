@@ -12,9 +12,15 @@ st.set_page_config(
 )
 st.title("Cartoonize your Photo")
 
+
 # Load Configuration
-IS_TEST = True
-config = dotenv_values(".env")
+if "CLOUDFLARE_ACCOUNT_ID" in st.secrets:
+    ACCOUNT_ID = st.secrets["CLOUDFLARE_ACCOUNT_ID"]
+    API_KEY = st.secrets["CLOUDFLARE_API_TOKEN_IMAGES"]
+else:
+    config = dotenv_values(".env")
+    ACCOUNT_ID = config["CLOUDFLARE_ACCOUNT_ID"]
+    API_KEY = config["CLOUDFLARE_API_TOKEN_IMAGES"]
 
 
 # Handle OAuth Login
@@ -29,20 +35,7 @@ else:
     st.warning("Check your Account!")
     st.stop()
 
-
 with st.sidebar:
-    # API Credential
-    CLOUDFLARE_ACCOUNT_ID = (
-        st.text_input("Input your Cloudflare Account ID", type="password")
-        if IS_TEST == True
-        else config["CLOUDFLARE_ACCOUNT_ID"]
-    )
-    CLOUDFLARE_API_TOKEN = (
-        st.text_input("Input your Cloudflare API Token", type="password")
-        if IS_TEST == True
-        else config["CLOUDFLARE_API_TOKEN"]
-    )
-
     # Cartoon Style
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
@@ -50,10 +43,10 @@ with st.sidebar:
             "케이팝 | k-pop",
             "뽀로로 | ppororo",
             "지브리 | ghibli",
+            "짱구   | crayon shinchan",
             "디즈니 | disney",
+            "고흐   | van gogh",
             "피카소 | picaso",
-            "판타지 | fantastic",
-            "사이버 | cybertic",
         ),
     )
 
@@ -68,14 +61,16 @@ with st.sidebar:
 
 def upload_image_to_cloudflare(image_file):
     """Upload Image on Storage Server using Cloudflare Images API"""
-    CLOUDFLARE_UPLOAD_URL = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/images/v1"
+    CLOUDFLARE_UPLOAD_URL = (
+        f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/images/v1"
+    )
 
     encoder = MultipartEncoder(
         fields={"file": (image_file.name, image_file, "image/jpeg")}
     )
 
     headers = {
-        "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": encoder.content_type,
     }
 
@@ -88,10 +83,8 @@ def upload_image_to_cloudflare(image_file):
         return None
 
 
-if not CLOUDFLARE_ACCOUNT_ID:
-    st.error("Please input your Cloudflare Account ID on the sidebar")
-elif not CLOUDFLARE_API_TOKEN:
-    st.error("Please input your Cloudflare API Token on the sidebar")
+if not API_KEY:
+    st.error("Please input your Cloudflare API Token on runtime configuration")
 else:
     uploaded_file = st.file_uploader("Upload your photo!", type=["jpg", "png", "jpeg"])
 

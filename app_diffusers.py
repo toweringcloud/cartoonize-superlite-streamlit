@@ -13,20 +13,20 @@ st.set_page_config(
 )
 st.title("Cartoonize your Photo")
 
+
 # Load Configuration
-IS_TEST = True
-config = dotenv_values(".env")
+if "OPENAI_API_KEY" in st.secrets:
+    LANGUAGE = st.secrets["CUSTOM_LANGUAGE"]
+    API_KEY = st.secrets["OPENAI_API_KEY"]
+    GPT_MODEL = st.secrets["OPENAI_MODEL_DRAW"]
+else:
+    config = dotenv_values(".env")
+    LANGUAGE = config["CUSTOM_LANGUAGE"]
+    API_KEY = config["OPENAI_API_KEY"]
+    GPT_MODEL = config["OPENAI_MODEL_DRAW"]
+
 
 with st.sidebar:
-    # API Credential
-    OPENAI_API_KEY = (
-        st.text_input("Input your OpenAI API Key", type="password")
-        if IS_TEST == True
-        else config["OPENAI_API_KEY"]
-    )
-    OPENAI_GPT_MODEL = "gpt-4o-mini" if IS_TEST == True else config["OPENAI_GPT_MODEL"]
-    OPENAI_LANGUAGE = "Korean" if IS_TEST == True else config["OPENAI_LANGUAGE"]
-
     # Cartoon Style
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
@@ -50,11 +50,11 @@ with st.sidebar:
     st.write(f"[![Repo]({badge_link})]({github_link})")
 
 
-if not OPENAI_API_KEY:
-    st.error("Please input your OpenAI API Key on the sidebar")
+if not API_KEY:
+    st.error("Please input your Replicate API Token on runtime configuration")
 else:
     # Define OpenAI API Client
-    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+    client = openai.OpenAI(api_key=API_KEY)
 
     uploaded_file = st.file_uploader("Upload your photo.", type=["jpg", "png", "jpeg"])
 
@@ -79,7 +79,7 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-            if st.button("Cartoonize your photo."):
+            if st.button("🐱‍🐉 Cartoonize"):
                 # Transform Uploaded Image using OpenAI DALL·E API
                 cartoon_url = None
                 with st.spinner("Transforming..."):
@@ -111,9 +111,9 @@ else:
                     )
 
                     # Generate Summary on Image using LangChain
-                    description_prompt = f"Describe this cartoon-style image ({cartoon_url}) briefly in {OPENAI_LANGUAGE}.)"
+                    description_prompt = f"Describe this cartoon-style image ({cartoon_url}) briefly in {LANGUAGE}.)"
                     description = client.chat.completions.create(
-                        model=OPENAI_GPT_MODEL,
+                        model=GPT_MODEL,
                         messages=[{"role": "system", "content": description_prompt}],
                     )
 
