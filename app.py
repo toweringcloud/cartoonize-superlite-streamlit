@@ -8,7 +8,7 @@ st.set_page_config(
     page_title="::: Cartoonize GPT :::",
     page_icon="🎨",
 )
-st.title("Cartoonize your Prompt")
+st.title("Cartoonize your Anything")
 
 
 # Load Configuration
@@ -65,6 +65,16 @@ with st.sidebar:
         ),
     )
 
+    # Image Size(Pixel)
+    selected_size = st.selectbox(
+        "Choose a Image Size",
+        (
+            "기본(1:1) | 1024x1024",
+            "세로(9:16) | 1024x1792",
+            "가로(16:9) | 1792x1024",
+        ),
+    )
+
     # Link to Github Repo
     st.markdown("---")
     github_link = "https://github.com/toweringcloud/cartoonize-gpt/blob/main/app.py"
@@ -92,14 +102,12 @@ else:
                     response = client.images.generate(
                         model=GPT_MODEL,
                         prompt=f"{user_prompt}, high quality, {art_style[1]} cartoon style",
-                        size="1024x1024",
+                        size=selected_size.split(" | ")[1],
                         n=1,
                     )
                     cartoon_url = response.data[0].url
 
                 if cartoon_url:
-                    st.success("✅ Transformed!")
-
                     # Show Transformed Image
                     st.image(
                         cartoon_url,
