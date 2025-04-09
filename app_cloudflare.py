@@ -107,7 +107,7 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-            if st.button("Cartoonize your photo!"):
+             if st.button("Cartoonize"):
                 # Upload Image on Cloudflare Storage
                 image_url = None
                 with st.spinner("Uploading..."):

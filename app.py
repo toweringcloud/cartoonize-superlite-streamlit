@@ -94,14 +94,14 @@ else:
     if user_prompt:
         if len(user_prompt) >= 10:
             # Action to Cartoonize
-            if st.button("🐱‍🐉 Cartoonize"):
+            if st.button("Cartoonize"):
                 # Transform Uploaded Image using OpenAI DALL·E API
                 cartoon_url = None
                 with st.spinner("Transforming..."):
                     art_style = selected_style.split(" | ")
                     response = client.images.generate(
                         model=GPT_MODEL,
-                        prompt=f"{user_prompt}, high quality, {art_style[1]} cartoon style",
+                        prompt=f"{user_prompt}, {art_style[0]} 스타일의 캐릭터로 보여줘~",
                         size=selected_size.split(" | ")[1],
                         n=1,
                     )

@@ -75,7 +75,7 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-            if st.button("🐱‍🐉 Cartoonize"):
+             if st.button("Cartoonize"):
                 # Encode Image as Base64
                 img_b64 = None
                 with st.spinner("Encoding..."):

@@ -79,7 +79,7 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-            if st.button("🐱‍🐉 Cartoonize"):
+            if st.button("Cartoonize"):
                 # Transform Uploaded Image using OpenAI DALL·E API
                 cartoon_url = None
                 with st.spinner("Transforming..."):
