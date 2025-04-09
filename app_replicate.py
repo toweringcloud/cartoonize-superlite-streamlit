@@ -1,25 +1,33 @@
 from dotenv import dotenv_values
 from PIL import Image
-import base64
-import io
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 import replicate
+import requests
 import streamlit as st
 
 
 # Streamlit App UI
 st.set_page_config(
-    page_title="::: Cartoonize GPT :::",
+    page_title="::: Cartoonize R :::",
     page_icon="🎨",
 )
-st.title("Cartoonize your Photo")
+st.title("Cartoonize")
 
 
 # Load Configuration
 if "REPLICATE_API_TOKEN" in st.secrets:
-    API_KEY = st.secrets["REPLICATE_API_TOKEN"]
+    IMAGE_ACCOUNT_ID = st.secrets["CLOUDFLARE_ACCOUNT_ID"]
+    IMAGE_API_URL = st.secrets["CLOUDFLARE_API_URL"]
+    IMAGE_API_KEY = st.secrets["CLOUDFLARE_API_TOKEN_IMAGES"]
+    GPT_API_KEY = st.secrets["REPLICATE_API_TOKEN"]
+    GPT_MODEL = st.secrets["REPLICATE_MODEL_DRAW"]
 else:
     config = dotenv_values(".env")
-    API_KEY = config["REPLICATE_API_TOKEN"]
+    IMAGE_ACCOUNT_ID = config["CLOUDFLARE_ACCOUNT_ID"]
+    IMAGE_API_URL = config["CLOUDFLARE_API_URL"]
+    IMAGE_API_KEY = config["CLOUDFLARE_API_TOKEN_IMAGES"]
+    GPT_API_KEY = config["REPLICATE_API_TOKEN"]
+    GPT_MODEL = config["REPLICATE_MODEL_DRAW"]
 
 
 with st.sidebar:
@@ -27,13 +35,13 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "케이팝 | k-pop",
-            "뽀로로 | ppororo",
             "지브리 | ghibli",
             "짱구   | crayon shinchan",
             "디즈니 | disney",
             "고흐   | van gogh",
-            "피카소 | picaso",
+            "케이팝 | k-pop idol",
+            "뽀로로 | ppororo",
+            "셀럽 | celebrity",
         ),
     )
 
@@ -46,12 +54,30 @@ with st.sidebar:
     st.write(f"[![Repo]({badge_link})]({github_link})")
 
 
-if not API_KEY:
+def upload_image_to_storage(image_file):
+    encoder = MultipartEncoder(
+        fields={"file": (image_file.name, image_file, "image/jpeg")}
+    )
+    headers = {
+        "Authorization": f"Bearer {IMAGE_API_KEY}",
+        "Content-Type": encoder.content_type,
+    }
+
+    IMAGE_UPLOAD_URL = f"{IMAGE_API_URL}/{IMAGE_ACCOUNT_ID}/images/v1"
+    response = requests.post(IMAGE_UPLOAD_URL, headers=headers, data=encoder)
+
+    if response.status_code == 200:
+        return response.json()["result"]["variants"][0]
+    else:
+        st.error(f"Failed to upload: {response.text}")
+        return None
+
+
+if not IMAGE_API_KEY:
+    st.error("Please input your Cloudflare API Token on runtime configuration")
+elif not GPT_API_KEY:
     st.error("Please input your Replicate API Token on runtime configuration")
 else:
-    # Define Replicate API Client
-    replicate.client = replicate.Client(api_token=API_KEY)
-
     uploaded_file = st.file_uploader("Upload your photo.", type=["jpg", "png", "jpeg"])
 
     if uploaded_file is not None:
@@ -75,30 +101,34 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-             if st.button("Cartoonize"):
-                # Encode Image as Base64
-                img_b64 = None
-                with st.spinner("Encoding..."):
-                    img_io = io.BytesIO()
-                    image.save(img_io, format="PNG")
-                    img_bytes = img_io.getvalue()
-                    img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+            if st.button("Cartoonize"):
+                # Upload Image on Cloudflare Storage
+                image_url = None
+                with st.spinner("Uploading..."):
+                    image_url = upload_image_to_storage(uploaded_file)
 
-                if img_b64:
+                # if img_b64:
+                if image_url:
+                    st.success("✅ Uploaded!")
+
                     # Transform Uploaded Image using Replicate API (Stable Diffusion img2img)
                     cartoon_url = None
                     with st.spinner("Transforming..."):
                         art_style = selected_style.split(" | ")[1]
+                        replicate.client = replicate.Client(api_token=GPT_API_KEY)
                         output = replicate.run(
-                            "stability-ai/stable-diffusion-img2img",
+                            GPT_MODEL,
                             input={
-                                "image": f"data:image/png;base64,{img_b64}",
+                                "image": image_url,
                                 "prompt": f"A cartoon version of this image, high quality, digital art, {art_style} style",
-                                "strength": 0.75,
+                                "prompt_strength": 0.8,
                                 "guidance_scale": 7.5,
+                                "num_inference_steps": 25,
+                                "num_outputs": 1,
+                                "output_quality": 90,
                             },
                         )
-                        cartoon_url = output[0]
+                        cartoon_url = output[0].url
 
                     if cartoon_url:
                         st.success("✅ Transformed!")

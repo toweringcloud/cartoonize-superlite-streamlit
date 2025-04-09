@@ -8,10 +8,10 @@ import torch
 
 # Streamlit App UI
 st.set_page_config(
-    page_title="::: Cartoonize GPT :::",
+    page_title="::: Cartoonize S :::",
     page_icon="🎨",
 )
-st.title("Cartoonize your Photo")
+st.title("Cartoonize")
 
 
 # Load Configuration
@@ -31,13 +31,13 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "케이팝 | k-pop",
-            "뽀로로 | ppororo",
             "지브리 | ghibli",
+            "짱구   | crayon shinchan",
             "디즈니 | disney",
-            "피카소 | picaso",
-            "판타지 | fantastic",
-            "사이버 | cybertic",
+            "고흐   | van gogh",
+            "케이팝 | k-pop idol",
+            "뽀로로 | ppororo",
+            "셀럽 | celebrity",
         ),
     )
 

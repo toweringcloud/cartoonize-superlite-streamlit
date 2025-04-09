@@ -7,20 +7,22 @@ import streamlit as st
 
 # Streamlit App UI
 st.set_page_config(
-    page_title="::: Cartoonize GPT :::",
+    page_title="::: Cartoonize C :::",
     page_icon="🎨",
 )
-st.title("Cartoonize your Photo")
+st.title("Cartoonize")
 
 
 # Load Configuration
 if "CLOUDFLARE_ACCOUNT_ID" in st.secrets:
-    ACCOUNT_ID = st.secrets["CLOUDFLARE_ACCOUNT_ID"]
-    API_KEY = st.secrets["CLOUDFLARE_API_TOKEN_IMAGES"]
+    IMAGE_ACCOUNT_ID = st.secrets["CLOUDFLARE_ACCOUNT_ID"]
+    IMAGE_API_URL = st.secrets["CLOUDFLARE_API_URL"]
+    IMAGE_API_KEY = st.secrets["CLOUDFLARE_API_TOKEN_IMAGES"]
 else:
     config = dotenv_values(".env")
-    ACCOUNT_ID = config["CLOUDFLARE_ACCOUNT_ID"]
-    API_KEY = config["CLOUDFLARE_API_TOKEN_IMAGES"]
+    IMAGE_ACCOUNT_ID = config["CLOUDFLARE_ACCOUNT_ID"]
+    IMAGE_API_URL = config["CLOUDFLARE_API_URL"]
+    IMAGE_API_KEY = config["CLOUDFLARE_API_TOKEN_IMAGES"]
 
 
 # Handle OAuth Login
@@ -40,13 +42,13 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "케이팝 | k-pop",
-            "뽀로로 | ppororo",
             "지브리 | ghibli",
             "짱구   | crayon shinchan",
             "디즈니 | disney",
             "고흐   | van gogh",
-            "피카소 | picaso",
+            "케이팝 | k-pop idol",
+            "뽀로로 | ppororo",
+            "셀럽 | celebrity",
         ),
     )
 
@@ -59,22 +61,17 @@ with st.sidebar:
     st.write(f"[![Repo]({badge_link})]({github_link})")
 
 
-def upload_image_to_cloudflare(image_file):
-    """Upload Image on Storage Server using Cloudflare Images API"""
-    CLOUDFLARE_UPLOAD_URL = (
-        f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/images/v1"
-    )
-
+def upload_image_to_storage(image_file):
     encoder = MultipartEncoder(
         fields={"file": (image_file.name, image_file, "image/jpeg")}
     )
-
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {IMAGE_API_KEY}",
         "Content-Type": encoder.content_type,
     }
 
-    response = requests.post(CLOUDFLARE_UPLOAD_URL, headers=headers, data=encoder)
+    IMAGE_UPLOAD_URL = f"{IMAGE_API_URL}/{IMAGE_ACCOUNT_ID}/images/v1"
+    response = requests.post(IMAGE_UPLOAD_URL, headers=headers, data=encoder)
 
     if response.status_code == 200:
         return response.json()["result"]["variants"][0]
@@ -83,7 +80,7 @@ def upload_image_to_cloudflare(image_file):
         return None
 
 
-if not API_KEY:
+if not IMAGE_API_KEY:
     st.error("Please input your Cloudflare API Token on runtime configuration")
 else:
     uploaded_file = st.file_uploader("Upload your photo!", type=["jpg", "png", "jpeg"])
@@ -107,11 +104,11 @@ else:
             st.image(image, caption="Original Image", use_container_width=True)
 
             # Action to Cartoonize
-             if st.button("Cartoonize"):
+            if st.button("Cartoonize"):
                 # Upload Image on Cloudflare Storage
                 image_url = None
                 with st.spinner("Uploading..."):
-                    image_url = upload_image_to_cloudflare(uploaded_file)
+                    image_url = upload_image_to_storage(uploaded_file)
 
                 if image_url:
                     st.success("✅ Uploaded!")
