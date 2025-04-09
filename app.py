@@ -165,9 +165,6 @@ else:
             ),
         )
 
-        # sample prompt on stability-ai / stable-diffusion-3.5-medium
-        # a captivating anime-style illustration of a woman in a white astronaut suit. She has long, dark wavy hair. Surrounding the astronaut are vibrant orange flowers with yellow centers. The background itself is a mesmerizing night sky filled with countless stars
-
         if uploaded_file is not None:
             # Check File Size (Max 3MB)
             if uploaded_file.size > 3 * 1024 * 1024:
@@ -206,15 +203,14 @@ else:
                                     "num_outputs": 1,
                                 },
                             )
-                            print(output)
                             cartoon_url = (
                                 output[0].url
                                 if isinstance(output, list)
                                 else str(output)
                             )
 
+                        # Show Transformed Image
                         if cartoon_url:
-                            # Show Transformed Image
                             st.image(
                                 cartoon_url,
                                 caption=f"{art_style[1]} style of cartoon",
