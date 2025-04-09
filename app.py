@@ -51,9 +51,7 @@ def login():
 
 
 def upload_image_to_storage(image_file):
-    encoder = MultipartEncoder(
-        fields={"file": (image_file.name, image_file, "image/jpeg")}
-    )
+    encoder = MultipartEncoder(fields={"file": (image_file.name, image_file, "image/jpeg")})
     headers = {
         "Authorization": f"Bearer {IMAGE_API_KEY}",
         "Content-Type": encoder.content_type,
@@ -151,9 +149,7 @@ else:
         replicate.client = replicate.Client(api_token=GPT_API_KEY)
 
         # Accept User's Prompt
-        uploaded_file = st.file_uploader(
-            "Upload your photo.", type=["jpg", "png", "jpeg"]
-        )
+        uploaded_file = st.file_uploader("Upload your photo.", type=["jpg", "png", "jpeg"])
 
         # Accept User's Prompt (Optional)
         user_prompt = st.text_input(
@@ -185,6 +181,12 @@ else:
                     if image_url:
                         cartoon_url = None
                         art_style = selected_style.split(" | ")
+                        prompt_content = f"""
+                            A cartoon version of the input image, maintaining the same pose, background, hair style and facial expression. 
+                            Clean lines, bright colors, stylized like popular studio animation, but with the original subject's identity preserved.
+                            Additionaly, draw human or animal character in the original scene as {art_style[1]} style as possible.
+                            {user_prompt if len(user_prompt) > 5 else ""}
+                        """
 
                         # Transform uploaded image into cartoon using stable-diffusion-3.5-medium
                         with st.spinner("Transforming..."):
@@ -193,19 +195,16 @@ else:
                                 input={
                                     "image": image_url,
                                     "aspect_ratio": selected_ratio.split(" | ")[1],
-                                    "prompt": f"A {art_style[1]} style of cartoonized image, {user_prompt if len(user_prompt) > 5 else 'natural'}",
-                                    "prompt_strength": 0.8,
-                                    "guidance_scale": 7.5,
+                                    "prompt": prompt_content,
+                                    "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
+                                    "strength": 0.3,
+                                    "guidance_scale": 7,
                                     "output_quality": 90,
                                     "num_inference_steps": 25,
                                     "num_outputs": 1,
                                 },
                             )
-                            cartoon_url = (
-                                output[0].url
-                                if isinstance(output, list)
-                                else str(output)
-                            )
+                            cartoon_url = output[0].url if isinstance(output, list) else str(output)
 
                         # Show Transformed Image
                         if cartoon_url:
