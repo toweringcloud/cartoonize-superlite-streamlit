@@ -183,9 +183,8 @@ else:
                         art_style = selected_style.split(" | ")
                         prompt_content = f"""
                             A high-quality cartoon version of the input image. 
-                            Clean lines, smooth shading, popular animation style. 
+                            Clean lines, smooth shading, {art_style[1]} animation style. 
                             Maintain the original facial expression and pose.
-                            {art_style[1]} style of natural digital art. 
                             {user_prompt if len(user_prompt) > 5 else ""}
                         """
 
@@ -197,8 +196,8 @@ else:
                                     "image": image_url,
                                     "aspect_ratio": selected_ratio.split(" | ")[1],
                                     "prompt": prompt_content,
-                                    "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
-                                    "prompt_strength": 0.2,
+                                    # "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
+                                    "prompt_strength": 0.5,
                                     "guidance_scale": 7,
                                     "output_quality": 90,
                                     "num_inference_steps": 25,
