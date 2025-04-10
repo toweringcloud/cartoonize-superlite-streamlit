@@ -184,7 +184,6 @@ else:
                         prompt_content = f"""
                             A high-quality cartoon version of the input image. 
                             Clean lines, smooth shading, {art_style[1]} animation style. 
-                            Maintain the original facial expression and pose.
                             {user_prompt if len(user_prompt) > 5 else ""}
                         """
 
@@ -197,7 +196,7 @@ else:
                                     "aspect_ratio": selected_ratio.split(" | ")[1],
                                     "prompt": prompt_content,
                                     # "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
-                                    "prompt_strength": 0.5,
+                                    "prompt_strength": 0.7,
                                     "guidance_scale": 7,
                                     "output_quality": 90,
                                     "num_inference_steps": 25,
