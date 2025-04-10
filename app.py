@@ -195,7 +195,7 @@ else:
                                     "image": image_url,
                                     "aspect_ratio": selected_ratio.split(" | ")[1],
                                     "prompt": prompt_content,
-                                    # "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
+                                    "negative_prompt": "blurry, distorted, extra limbs",
                                     "prompt_strength": 0.7,
                                     "guidance_scale": 7,
                                     "output_quality": 90,
@@ -203,7 +203,9 @@ else:
                                     "num_outputs": 1,
                                 },
                             )
-                            cartoon_url = output[0].url if isinstance(output, list) else str(output)
+                            cartoon_url = (
+                                str(output[0]) if isinstance(output, list) else str(output)
+                            )
 
                         # Show Transformed Image
                         if cartoon_url:
