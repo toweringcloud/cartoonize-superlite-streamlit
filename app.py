@@ -182,9 +182,10 @@ else:
                         cartoon_url = None
                         art_style = selected_style.split(" | ")
                         prompt_content = f"""
-                            A cartoon version of the input image, maintaining the same pose, background, hair style and facial expression. 
-                            Clean lines, bright colors, stylized like popular studio animation, but with the original subject's identity preserved. 
-                            Human or animal character as {art_style[1]} style of high quality digital art as possible. 
+                            A high-quality cartoon version of the input image. 
+                            Clean lines, smooth shading, popular animation style. 
+                            Maintain the original facial expression and pose.
+                            {art_style[1]} style of natural digital art. 
                             {user_prompt if len(user_prompt) > 5 else ""}
                         """
 
