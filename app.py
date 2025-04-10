@@ -51,7 +51,9 @@ def login():
 
 
 def upload_image_to_storage(image_file):
-    encoder = MultipartEncoder(fields={"file": (image_file.name, image_file, "image/jpeg")})
+    encoder = MultipartEncoder(
+        fields={"file": (image_file.name, image_file, "image/jpeg")}
+    )
     headers = {
         "Authorization": f"Bearer {IMAGE_API_KEY}",
         "Content-Type": encoder.content_type,
@@ -95,13 +97,13 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "지브리 | ghibli",
-            "짱구   | crayon shinchan",
-            "디즈니 | disney",
-            "고흐   | van gogh",
-            "케이팝 | k-pop idol",
-            "뽀로로 | ppororo",
-            "셀럽 | celebrity",
+            "디즈니 | Pixar disney",
+            "마블   | Marvel hero",
+            "지브리 | Ghibli studio",
+            "짱구   | Crayon shinchan",
+            "김홍도 | Korean folk painting",
+            "선비 | Confucian scholar",
+            "탤런트 | World wide celebrity",
         ),
     )
 
@@ -149,7 +151,9 @@ else:
         replicate.client = replicate.Client(api_token=GPT_API_KEY)
 
         # Accept User's Prompt
-        uploaded_file = st.file_uploader("Upload your photo.", type=["jpg", "png", "jpeg"])
+        uploaded_file = st.file_uploader(
+            "Upload your photo.", type=["jpg", "png", "jpeg"]
+        )
 
         # Accept User's Prompt (Optional)
         user_prompt = st.text_input(
@@ -181,10 +185,22 @@ else:
                     if image_url:
                         cartoon_url = None
                         art_style = selected_style.split(" | ")
-                        prompt_content = f"""
-                            A high-quality cartoon version of the input image. 
-                            Clean lines, smooth shading, {art_style[1]} animation style. 
+
+                        prompt_plus = f"""
+                            A cartoon version of the input image, maintaining the same pose, background and facial expression. 
+                            Clean lines, bright colors, stylized like {art_style[1]} animation, but with the original subject's identity preserved. 
                             {user_prompt if len(user_prompt) > 5 else ""}
+                        """
+                        prompt_minus = """
+                            disfigured, kitsch, ugly, oversaturated, greain, 
+                            low-res, deformed, blurry, bad anatomy, poorly drawn face, 
+                            mutation, mutated, extra limb, poorly drawn hands, missing limb, 
+                            floating limbs, disconnected limbs, malformed hands, blur, out of focus, 
+                            long neck, long body, disgusting, poorly drawn, childish, 
+                            mutilated, mangled, old, surreal, calligraphy, 
+                            sign, writing, watermark, text, body out of frame, 
+                            extra legs, extra arms, extra feet, out of frame, poorly drawn feet, 
+                            cross-eye
                         """
 
                         # Transform uploaded image into cartoon using stable-diffusion-3.5-medium
@@ -193,17 +209,21 @@ else:
                                 GPT_MODEL,
                                 input={
                                     "image": image_url,
-                                    "aspect_ratio": selected_ratio.split(" | ")[1],
-                                    "prompt": prompt_content,
-                                    "prompt_strength": 0.4,
-                                    "guidance_scale": 7,
+                                    "prompt": prompt_plus,
+                                    "negative_prompt": prompt_minus,
+                                    "prompt_strength": 0.5,
+                                    "strength": 0.5,
+                                    "guidance_scale": 7.5,
                                     "output_quality": 90,
-                                    "num_inference_steps": 25,
+                                    "num_inference_steps": 30,
                                     "num_outputs": 1,
+                                    "aspect_ratio": selected_ratio.split(" | ")[1],
                                 },
                             )
                             cartoon_url = (
-                                str(output[0]) if isinstance(output, list) else str(output)
+                                str(output[0])
+                                if isinstance(output, list)
+                                else str(output)
                             )
 
                         # Show Transformed Image
