@@ -183,8 +183,8 @@ else:
                         art_style = selected_style.split(" | ")
                         prompt_content = f"""
                             A cartoon version of the input image, maintaining the same pose, background, hair style and facial expression. 
-                            Clean lines, bright colors, stylized like popular studio animation, but with the original subject's identity preserved.
-                            Additionaly, draw human or animal character in the original scene as {art_style[1]} style as possible.
+                            Clean lines, bright colors, stylized like popular studio animation, but with the original subject's identity preserved. 
+                            Human or animal character as {art_style[1]} style of high quality digital art as possible. 
                             {user_prompt if len(user_prompt) > 5 else ""}
                         """
 
@@ -196,8 +196,8 @@ else:
                                     "image": image_url,
                                     "aspect_ratio": selected_ratio.split(" | ")[1],
                                     "prompt": prompt_content,
-                                    "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
-                                    "strength": 0.3,
+                                    # "negative_prompt": "blurry, distorted, extra limbs, photo-realistic",
+                                    "strength": 0.2,
                                     "guidance_scale": 7,
                                     "output_quality": 90,
                                     "num_inference_steps": 25,
