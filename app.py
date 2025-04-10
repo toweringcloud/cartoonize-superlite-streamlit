@@ -84,9 +84,9 @@ if not st.session_state.logged_in:
 
 
 with st.sidebar:
-    # Input Condition
+    # Input Source
     selected_input = st.selectbox(
-        "Choose a Input Condition",
+        "Choose a Input Source",
         (
             "이미지 | photo",
             "텍스트 | prompt",
@@ -128,6 +128,15 @@ with st.sidebar:
                 "세로(9:16) | 1024x1792",
             ),
         )
+    )
+
+    # Prompt Strength
+    selected_strength = st.slider(
+        "Choose a Prompt Strength",
+        min_value=0.0,
+        max_value=1.0,
+        step=0.05,
+        value=0.5,  # default
     )
 
     # Link to Github Repo
@@ -211,8 +220,8 @@ else:
                                     "image": image_url,
                                     "prompt": prompt_plus,
                                     "negative_prompt": prompt_minus,
-                                    "prompt_strength": 0.5,
-                                    "strength": 0.5,
+                                    "prompt_strength": selected_strength,
+                                    "strength": selected_strength,
                                     "guidance_scale": 7.5,
                                     "output_quality": 90,
                                     "num_inference_steps": 30,
