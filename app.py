@@ -23,7 +23,9 @@ if "CUSTOM_LOGIN_ID" in st.secrets:
     IMAGE_API_URL = st.secrets["CLOUDFLARE_API_URL"]
     IMAGE_API_KEY = st.secrets["CLOUDFLARE_API_TOKEN_IMAGES"]
     GPT_API_KEY = st.secrets["REPLICATE_API_TOKEN"]
-    GPT_MODEL = st.secrets["REPLICATE_MODEL_DRAW"]
+    GPT_MODEL1_C1 = st.secrets["REPLICATE_MODEL_DRAW1"]
+    GPT_MODEL1_C2 = st.secrets["REPLICATE_MODEL_DRAW2"]
+    GPT_MODEL1_C3 = st.secrets["REPLICATE_MODEL_DRAW3"]
     GPT_API_KEY2 = st.secrets["OPENAI_API_KEY"]
     GPT_MODEL2 = st.secrets["OPENAI_MODEL_DRAW"]
 else:
@@ -34,7 +36,9 @@ else:
     IMAGE_API_URL = config["CLOUDFLARE_API_URL"]
     IMAGE_API_KEY = config["CLOUDFLARE_API_TOKEN_IMAGES"]
     GPT_API_KEY = config["REPLICATE_API_TOKEN"]
-    GPT_MODEL = config["REPLICATE_MODEL_DRAW"]
+    GPT_MODEL1_C1 = config["REPLICATE_MODEL_DRAW1"]
+    GPT_MODEL1_C2 = config["REPLICATE_MODEL_DRAW2"]
+    GPT_MODEL1_C3 = config["REPLICATE_MODEL_DRAW3"]
     GPT_API_KEY2 = config["OPENAI_API_KEY"]
     GPT_MODEL2 = config["OPENAI_MODEL_DRAW"]
 
@@ -97,13 +101,13 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "디즈니 | Pixar disney",
+            "디즈니 | Pixar Disney",
             "마블   | Marvel hero",
-            "지브리 | Ghibli studio",
-            "짱구   | Crayon shinchan",
+            "지브리 | Studio Ghibli",
+            "짱구   | Crayon shin-chan",
             "김홍도 | Korean folk painting",
-            "선비 | Confucian scholar",
-            "탤런트 | World wide celebrity",
+            "아이돌 | K-Pop Star",
+            "탤런트 | World-wide celebrity",
         ),
     )
 
@@ -130,13 +134,22 @@ with st.sidebar:
         )
     )
 
-    # Prompt Strength
+    # Change Strength (how many change - image)
     selected_strength = st.slider(
-        "Choose a Prompt Strength",
+        "Choose a Change Strength",
         min_value=0.0,
         max_value=1.0,
         step=0.05,
         value=0.5,  # default
+    )
+
+    # Guidance Scale (how to draw - prompt)
+    selected_scale = st.slider(
+        "Choose a Guidance Scale",
+        min_value=0.0,
+        max_value=15.0,
+        step=0.5,
+        value=5.5,  # default
     )
 
     # Link to Github Repo
@@ -153,9 +166,18 @@ elif not GPT_API_KEY:
 elif not GPT_API_KEY2:
     st.error("Please input your OpenAI API Key on runtime configuration")
 else:
+    # User Input Conditions
     input_condition = selected_input.split(" | ")[1]
+    art_style = selected_style.split(" | ")
 
     if input_condition == "photo":
+        # Arrange Proper AI Model
+        GPT_MODEL = (
+            GPT_MODEL1_C3
+            if art_style == "Studio Ghibli"
+            else (GPT_MODEL1_C2 if art_style == "Crayon shin-chan" else GPT_MODEL1_C1)
+        )
+
         # Define Replicate API Client
         replicate.client = replicate.Client(api_token=GPT_API_KEY)
 
@@ -192,9 +214,6 @@ else:
 
                     # if img_b64:
                     if image_url:
-                        cartoon_url = None
-                        art_style = selected_style.split(" | ")
-
                         prompt_plus = f"""
                             A cartoon version of the input image, maintaining the same pose, background and facial expression. 
                             Clean lines, bright colors, stylized like {art_style[1]} animation, but with the original subject's identity preserved. 
@@ -212,7 +231,8 @@ else:
                             cross-eye
                         """
 
-                        # Transform uploaded image into cartoon using stable-diffusion-3.5-medium
+                        # Transform custom image & prompt into cartoon using multi models
+                        cartoon_url = None
                         with st.spinner("Transforming..."):
                             output = replicate.run(
                                 GPT_MODEL,
@@ -269,10 +289,8 @@ else:
             if len(user_prompt) >= 10:
                 # Action to Cartoonize
                 if st.button("Cartoonize your Prompt"):
+                    # Transform custom prompt into cartoon using dall-e-3
                     cartoon_url = None
-                    art_style = selected_style.split(" | ")
-
-                    # Transform uploaded image into cartoon using dall-e-3
                     with st.spinner("Transforming..."):
                         response = client.images.generate(
                             model=GPT_MODEL2,

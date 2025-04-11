@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "cartoonize-gpt"
+version = "0.1.0"
+description = "cartoonize using custom prompt(text) or photo(image)"
+authors = ["toweringcloud <toweringcloud@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+cloudflare = "4.1.0"
+diffusers = "0.32.2"
+openai = "1.70.0"
+python-dotenv = "1.0.1"
+replicate = "1.0.4"
+requests = "2.32.3"
+requests-toolbelt = "1.0.0"
+streamlit = "1.44.1"
+torch = "2.6.0"
+transformers = "4.50.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
