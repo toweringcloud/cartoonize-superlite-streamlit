@@ -134,9 +134,9 @@ with st.sidebar:
         )
     )
 
-    # Change Strength (how many change - image)
-    selected_strength = st.slider(
-        "Choose a Change Strength",
+    # Transformation Strength (how many change - image)
+    selected_change = st.slider(
+        "Adjust a Transformation Strength",
         min_value=0.0,
         max_value=1.0,
         step=0.05,
@@ -145,11 +145,11 @@ with st.sidebar:
 
     # Guidance Scale (how to draw - prompt)
     selected_scale = st.slider(
-        "Choose a Guidance Scale",
+        "Adjust a Guidance Scale",
         min_value=0.0,
-        max_value=15.0,
+        max_value=13.0,
         step=0.5,
-        value=5.5,  # default
+        value=6.5,  # light (~4), natural (5~6), strong (9~12)
     )
 
     # Link to Github Repo
@@ -240,9 +240,9 @@ else:
                                     "image": image_url,
                                     "prompt": prompt_plus,
                                     "negative_prompt": prompt_minus,
-                                    "prompt_strength": selected_strength,
-                                    "strength": selected_strength,
-                                    "guidance_scale": 7.5,
+                                    "prompt_strength": selected_change,
+                                    "strength": selected_change,
+                                    "guidance_scale": selected_scale,
                                     "output_quality": 90,
                                     "num_inference_steps": 30,
                                     "num_outputs": 1,
