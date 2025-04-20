@@ -132,23 +132,24 @@ with st.sidebar:
         )
     )
 
-    # Transformation Strength (how many change - image)
-    selected_change = st.slider(
-        "Adjust a Transformation Strength",
-        min_value=0.1,
-        max_value=0.9,
-        step=0.05,
-        value=0.75,  # default
-    )
+    if selected_input.split(" | ")[1] == ("photo by replicate"):
+        # Transformation Strength (how many change - image)
+        selected_change = st.slider(
+            "Adjust a Transformation Strength",
+            min_value=0.1,
+            max_value=0.9,
+            step=0.05,
+            value=0.75,  # default
+        )
 
-    # Guidance Scale (how to draw - prompt)
-    selected_scale = st.slider(
-        "Adjust a Guidance Scale",
-        min_value=1,
-        max_value=15,
-        step=1,
-        value=10,  # natural (5~6), strong (9~12)
-    )
+        # Guidance Scale (how to draw - prompt)
+        selected_scale = st.slider(
+            "Adjust a Guidance Scale",
+            min_value=1,
+            max_value=15,
+            step=1,
+            value=10,  # natural (5~6), strong (9~12)
+        )
 
     # Link to Github Repo
     st.markdown("---")
@@ -168,6 +169,7 @@ else:
     drawing_style_name = (
         "free" if drawing_style[1] == "User Prompt" else drawing_style[1]
     )
+    upload_file_size_limit = 5 * 1024 * 1024
 
     # Define Assistant Prompt
     assistant_prompt = ""
@@ -196,8 +198,8 @@ else:
         )
 
         if uploaded_file is not None:
-            # Check File Size (Max 5MB)
-            if uploaded_file.size > 5 * 1024 * 1024:
+            # Check File Size
+            if uploaded_file.size > upload_file_size_limit:
                 st.warning("File size exceeds 5MB. Try again.")
             else:
                 # Load Original Image
@@ -223,7 +225,7 @@ else:
                         """
                         prompt_minus = "disfigured, kitsch, ugly, oversaturated, greain, low-res, deformed, blurry, bad anatomy, poorly drawn face, mutation, mutated, extra limb, poorly drawn hands, missing limb, floating limbs, disconnected limbs, malformed hands, blur, out of focus, long neck, long body, disgusting, poorly drawn, childish, mutilated, mangled, old, surreal, calligraphy, sign, writing, watermark, text, body out of frame, extra legs, extra arms, extra feet, out of frame, poorly drawn feet, cross-eye"
 
-                        # Transform custom image & prompt into cartoon using multi models
+                        # Transform custom image & prompt into cartoon using img2img model
                         cartoon_url = None
                         with st.spinner("Transforming..."):
                             output = replicate.run(
@@ -271,8 +273,8 @@ else:
         )
 
         if uploaded_file is not None:
-            # Check File Size (Max 5MB)
-            if uploaded_file.size > 5 * 1024 * 1024:
+            # Check File Size
+            if uploaded_file.size > upload_file_size_limit:
                 st.warning("File size exceeds 5MB. Try again.")
             else:
                 # Load Original Image
@@ -303,7 +305,7 @@ else:
                                     "content": [
                                         {
                                             "type": "text",
-                                            "text": "Describe this person and generate a prompt to turn them into a {drawing_style_name} style of cartoon.",
+                                            "text": f"Describe this person and generate a prompt to turn them into a {drawing_style_name} style of cartoon.",
                                         },
                                         {
                                             "type": "image_url",
@@ -316,19 +318,21 @@ else:
                             ],
                             max_tokens=300,
                         )
-                        # cartoon_prompt = response["choices"][0]["message"]["content"]
                         cartoon_prompt = response.choices[0].message.content
-                    st.markdown(f"# created prompt: `{cartoon_prompt}`")
+
+                    prompt_plus = f"""
+                        A cartoon version of the input image, maintaining the same pose, background and facial expression. 
+                        Clean lines, bright colors, {drawing_style_name} style, but with the original subject's identity preserved. 
+                        {assistant_prompt if len(assistant_prompt) > 0 else ""}
+                        {cartoon_prompt}
+                    """
 
                     # 3. DALL·E 3 API로 이미지 생성
                     with st.spinner("Transforming..."):
                         response = client.images.generate(
                             model=GPT_MODEL1,
                             size=selected_ratio.split(" | ")[1],
-                            prompt=f"""
-                                {assistant_prompt if len(assistant_prompt) > 0 else ""}
-                                {cartoon_prompt}
-                            """,
+                            prompt=prompt_plus,
                             n=1,
                         )
                         cartoon_url = response.data[0].url
@@ -337,7 +341,7 @@ else:
                         # Show Transformed Image
                         st.image(
                             cartoon_url,
-                            caption=f"[{drawing_style[0]}] {cartoon_prompt}",
+                            caption=f"[{drawing_style[1]}] {cartoon_prompt}",
                             use_container_width=True,
                         )
                         # Download Cartoon Images
