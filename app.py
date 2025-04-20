@@ -284,7 +284,7 @@ else:
                 st.image(image, caption="Original Image", use_container_width=True)
 
                 # Action to Cartoonize
-                if st.button("Cartoonize your Prompt"):
+                if st.button("Cartoonize your Photo"):
                     # 1. 이미지 base64로 변환
                     buffered = io.BytesIO()
                     image.save(buffered, format="JPEG")
@@ -305,7 +305,12 @@ else:
                                     "content": [
                                         {
                                             "type": "text",
-                                            "text": f"Describe this person and generate a prompt to turn them into a {drawing_style_name} style of cartoon.",
+                                            "text": f"""
+                                                A cartoon version of the input image, maintaining the same pose, background and facial expression. 
+                                                {drawing_style_name} style, but with the original subject's identity preserved. 
+                                                {assistant_prompt if len(assistant_prompt) > 0 else ""}
+                                                Generate a prompt to turn them into a cartoon.
+                                            """,
                                         },
                                         {
                                             "type": "image_url",
@@ -320,19 +325,12 @@ else:
                         )
                         cartoon_prompt = response.choices[0].message.content
 
-                    prompt_plus = f"""
-                        A cartoon version of the input image, maintaining the same pose, background and facial expression. 
-                        Clean lines, bright colors, {drawing_style_name} style, but with the original subject's identity preserved. 
-                        {assistant_prompt if len(assistant_prompt) > 0 else ""}
-                        {cartoon_prompt}
-                    """
-
                     # 3. DALL·E 3 API로 이미지 생성
                     with st.spinner("Transforming..."):
                         response = client.images.generate(
                             model=GPT_MODEL1,
                             size=selected_ratio.split(" | ")[1],
-                            prompt=prompt_plus,
+                            prompt=cartoon_prompt,
                             n=1,
                         )
                         cartoon_url = response.data[0].url
