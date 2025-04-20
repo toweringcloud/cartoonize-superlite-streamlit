@@ -42,13 +42,11 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "지브리 | ghibli",
-            "짱구   | crayon shinchan",
-            "디즈니 | disney",
-            "고흐   | van gogh",
-            "케이팝 | k-pop idol",
-            "뽀로로 | ppororo",
-            "셀럽 | celebrity",
+            "디즈니 | Disney",
+            "픽사 | Pixar",
+            "지브리 | Studio Ghibli",
+            "마블 | Marvel Hero",
+            "아이돌 | K-Pop Star",
         ),
     )
 

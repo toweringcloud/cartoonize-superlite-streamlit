@@ -1,6 +1,8 @@
 from dotenv import dotenv_values
 from PIL import Image
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+import base64
+import io
 import openai
 import streamlit as st
 import replicate
@@ -88,7 +90,8 @@ with st.sidebar:
     selected_input = st.selectbox(
         "Choose a Input Source",
         (
-            "이미지 | photo",
+            "이미지 | photo by replicate",
+            "이미지 | photo by openai",
             "텍스트 | prompt",
         ),
     )
@@ -97,9 +100,10 @@ with st.sidebar:
     selected_style = st.selectbox(
         "Choose a Cartoon Style",
         (
-            "디즈니 | Pixar Disney",
-            "마블 | Marvel Hero",
+            "디즈니 | Disney",
+            "픽사 | Pixar",
             "지브리 | Studio Ghibli",
+            "마블 | Marvel Hero",
             "아이돌 | K-Pop Star",
             "미정 | User Prompt",
         ),
@@ -117,7 +121,7 @@ with st.sidebar:
                 "세로(9:16) | 9:16",
             ),
         )
-        if selected_input.split(" | ")[1] == "photo"
+        if selected_input.split(" | ")[1] == ("photo by replicate")
         else st.selectbox(
             "Choose a Aspect Ratio",
             (
@@ -157,8 +161,6 @@ if not IMAGE_API_KEY:
     st.error("Please input your Cloudflare API Token on runtime configuration")
 elif not GPT_API_KEY1:
     st.error("Please input your OpenAI API Token on runtime configuration")
-elif not GPT_API_KEY2:
-    st.error("Please input your LeonardoAI API Token on runtime configuration")
 else:
     # User Input Conditions
     input_condition = selected_input.split(" | ")[1]
@@ -169,17 +171,14 @@ else:
 
     # Define Assistant Prompt
     assistant_prompt = ""
-    if drawing_style[1] == "Pixar Disney":
-        assistant_prompt = "A charming animated character in the style of classic Disney movies, with large expressive eyes, soft facial features, a whimsical and friendly smile, elegant proportions, smooth and clean line art, colorful and polished look, magical fairy-tale costume, warm and glowing lighting, set in a dreamy fantasy background, capturing the spirit of innocence and wonder,"
-    elif drawing_style[1] == "Marvel Hero":
-        assistant_prompt = "A powerful superhero character in the style of Marvel Comics, wearing a futuristic, high-tech suit with glowing elements, dynamic pose, detailed musculature, dramatic lighting, cinematic shadows, vibrant color palette, comic book realism, heroic expression, action-packed background, intense atmosphere, inspired by characters like Iron Man, Spider-Man, and Captain Marvel,"
-        selected_change = 0.5
+    if drawing_style[1] == "Pixar":
+        assistant_prompt = "3D animation"
     elif drawing_style[1] == "Studio Ghibli":
-        assistant_prompt = "A dreamy, hand-painted fantasy scene inspired by Studio Ghibli, rendered in soft pastel tones. Lush, gently swaying grass fields, delicate wildflowers, and a small child with a curious gaze standing beneath a wide, cloud-filled sky. Warm, golden sunlight filtering through the clouds, creating a peaceful, nostalgic mood. Light watercolor textures, painterly brushstrokes, and subtle glowing dust particles in the air. Whimsical creatures or forest spirits watching from afar, evoking a sense of magic and wonder. Inspired by 'My Neighbor Totoro' and 'Spirited Away', with a gentle Japanese countryside atmosphere,"
-        selected_change = 0.65
-        selected_scale = 12
+        assistant_prompt = "hand-drawn pastel tones"
+    elif drawing_style[1] == "Marvel Hero":
+        assistant_prompt = "powerful superhero character"
 
-    if input_condition == "photo":
+    if input_condition == "photo by replicate":
         # Define Replicate API Client
         replicate.client = replicate.Client(api_token=GPT_API_KEY2)
 
@@ -252,9 +251,101 @@ else:
                         if cartoon_url:
                             st.image(
                                 cartoon_url,
-                                caption=f"{drawing_style_name} style of cartoon",
+                                caption=f"{drawing_style_name} style of cartoon{', ' + user_prompt if len(user_prompt) > 5 else ''}",
                                 use_container_width=True,
                             )
+                            # Download Cartoon Images
+                            st.download_button(
+                                "Download",
+                                data=requests.get(cartoon_url).content,
+                                file_name="converted-s1.png",
+                            )
+
+    elif input_condition == "photo by openai":
+        # Define OpenAI API Client
+        client = openai.OpenAI(api_key=GPT_API_KEY1)
+
+        # Accept User's Prompt
+        uploaded_file = st.file_uploader(
+            "Upload your photo.", type=["jpg", "png", "jpeg"]
+        )
+
+        if uploaded_file is not None:
+            # Check File Size (Max 5MB)
+            if uploaded_file.size > 5 * 1024 * 1024:
+                st.warning("File size exceeds 5MB. Try again.")
+            else:
+                # Load Original Image
+                image = Image.open(uploaded_file)
+
+                # Show Original Image
+                st.image(image, caption="Original Image", use_container_width=True)
+
+                # Action to Cartoonize
+                if st.button("Cartoonize your Prompt"):
+                    # 1. 이미지 base64로 변환
+                    buffered = io.BytesIO()
+                    image.save(buffered, format="JPEG")
+                    img_bytes = buffered.getvalue()
+                    img_base64 = base64.b64encode(img_bytes).decode()
+
+                    # 2. GPT-4o로 이미지 분석 및 프롬프트 생성
+                    with st.spinner("Analyzing..."):
+                        response = client.chat.completions.create(
+                            model="gpt-4o",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "You are a visual AI assistant that describes people in cartoon style.",
+                                },
+                                {
+                                    "role": "user",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": "Describe this person and generate a prompt to turn them into a {drawing_style_name} style of cartoon.",
+                                        },
+                                        {
+                                            "type": "image_url",
+                                            "image_url": {
+                                                "url": f"data:image/jpeg;base64,{img_base64}"
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                            max_tokens=300,
+                        )
+                        # cartoon_prompt = response["choices"][0]["message"]["content"]
+                        cartoon_prompt = response.choices[0].message.content
+                    st.markdown(f"# created prompt: `{cartoon_prompt}`")
+
+                    # 3. DALL·E 3 API로 이미지 생성
+                    with st.spinner("Transforming..."):
+                        response = client.images.generate(
+                            model=GPT_MODEL1,
+                            size=selected_ratio.split(" | ")[1],
+                            prompt=f"""
+                                {assistant_prompt if len(assistant_prompt) > 0 else ""}
+                                {cartoon_prompt}
+                            """,
+                            n=1,
+                        )
+                        cartoon_url = response.data[0].url
+
+                    if cartoon_url:
+                        # Show Transformed Image
+                        st.image(
+                            cartoon_url,
+                            caption=f"[{drawing_style[0]}] {cartoon_prompt}",
+                            use_container_width=True,
+                        )
+                        # Download Cartoon Images
+                        st.download_button(
+                            "Download",
+                            data=requests.get(cartoon_url).content,
+                            file_name="converted-s2.png",
+                        )
 
     else:
         # Define OpenAI API Client
@@ -303,6 +394,12 @@ else:
                             cartoon_url,
                             caption=f"[{drawing_style[0]}] {user_prompt}",
                             use_container_width=True,
+                        )
+                        # Download Cartoon Image
+                        st.download_button(
+                            "Download",
+                            data=requests.get(cartoon_url).content,
+                            file_name="converted-s3.png",
                         )
             else:
                 st.error("⚠️ Please enter at least 10 characters.")
