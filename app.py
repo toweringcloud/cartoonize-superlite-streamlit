@@ -161,7 +161,9 @@ with st.sidebar:
 if not IMAGE_API_KEY:
     st.error("Please input your Cloudflare API Token on runtime configuration")
 elif not GPT_API_KEY1:
-    st.error("Please input your OpenAI API Token on runtime configuration")
+    st.error("Please input your OpenAI API Key on runtime configuration")
+elif not GPT_API_KEY2:
+    st.error("Please input your Replicate API Token on runtime configuration")
 else:
     # User Input Conditions
     input_condition = selected_input.split(" | ")[1]
